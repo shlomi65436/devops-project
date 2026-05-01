@@ -15,8 +15,22 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Wait for DB to be ready before starting
+const waitForDB = async (retries = 10, delay = 3000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await initDB();
+      return true;
+    } catch (err) {
+      console.log(`DB not ready yet, retrying in ${delay/1000}s... (${i + 1}/${retries})`);
+      await new Promise(res => setTimeout(res, delay));
+    }
+  }
+  throw new Error('Could not connect to DB after multiple retries');
+};
+
 const start = async () => {
-  await initDB();
+  await waitForDB();
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
